@@ -36,7 +36,6 @@ class EntityDamageEvent extends EntityEvent implements Cancellable{
 	const MODIFIER_STRENGTH = 2;
 	const MODIFIER_WEAKNESS = 3;
 	const MODIFIER_RESISTANCE = 4;
-	const MODIFIER_ABSORPTION = 5;
 
 	const CAUSE_CONTACT = 0;
 	const CAUSE_ENTITY_ATTACK = 1;
@@ -69,7 +68,7 @@ class EntityDamageEvent extends EntityEvent implements Cancellable{
 	 *
 	 * @throws \Exception
 	 */
-	public function __construct(Entity $entity, int $cause, $damage){
+	public function __construct(Entity $entity, $cause, $damage){
 		$this->entity = $entity;
 		$this->cause = $cause;
 		if(is_array($damage)){
@@ -85,12 +84,16 @@ class EntityDamageEvent extends EntityEvent implements Cancellable{
 		if(!isset($this->modifiers[self::MODIFIER_BASE])){
 			throw new \InvalidArgumentException("BASE Damage modifier missing");
 		}
+
+		if($entity->hasEffect(Effect::DAMAGE_RESISTANCE)){
+			$this->setDamage(-($this->getDamage(self::MODIFIER_BASE) * 0.20 * ($entity->getEffect(Effect::DAMAGE_RESISTANCE)->getAmplifier() + 1)), self::MODIFIER_RESISTANCE);
+		}
 	}
 
 	/**
 	 * @return int
 	 */
-	public function getCause() : int{
+	public function getCause(){
 		return $this->cause;
 	}
 
@@ -99,8 +102,12 @@ class EntityDamageEvent extends EntityEvent implements Cancellable{
 	 *
 	 * @return int
 	 */
-	public function getOriginalDamage(int $type = self::MODIFIER_BASE) : int{
-		return $this->originals[$type] ?? 0;
+	public function getOriginalDamage($type = self::MODIFIER_BASE){
+		if(isset($this->originals[$type])){
+			return $this->originals[$type];
+		}
+
+		return 0;
 	}
 
 	/**
@@ -108,15 +115,21 @@ class EntityDamageEvent extends EntityEvent implements Cancellable{
 	 *
 	 * @return int
 	 */
-	public function getDamage(int $type = self::MODIFIER_BASE) : int{
-		return $this->modifiers[$type] ?? 0;
+	public function getDamage($type = self::MODIFIER_BASE){
+		if(isset($this->modifiers[$type])){
+			return $this->modifiers[$type];
+		}
+
+		return 0;
 	}
 
 	/**
 	 * @param float $damage
 	 * @param int   $type
+	 *
+	 * @throws \UnexpectedValueException
 	 */
-	public function setDamage(float $damage, int $type = self::MODIFIER_BASE){
+	public function setDamage($damage, $type = self::MODIFIER_BASE){
 		$this->modifiers[$type] = $damage;
 	}
 
@@ -133,28 +146,12 @@ class EntityDamageEvent extends EntityEvent implements Cancellable{
 	 * @return int
 	 */
 	public function getFinalDamage(){
-		return array_sum($this->modifiers);
-	}
-
-	/**
-	 * Returns whether this type of damage can be reduced by an entity's armor.
-	 * @return bool
-	 */
-	public function canBeReducedByArmor() : bool{
-		switch($this->cause){
-			case self::CAUSE_FIRE_TICK:
-			case self::CAUSE_SUFFOCATION:
-			case self::CAUSE_DROWNING:
-			case self::CAUSE_STARVATION:
-			case self::CAUSE_FALL:
-			case self::CAUSE_VOID:
-			case self::CAUSE_MAGIC:
-			case self::CAUSE_SUICIDE:
-				//TODO: lightning
-				return false;
-			default:
-				return true;
+		$damage = 0;
+		foreach($this->modifiers as $type => $d){
+			$damage += $d;
 		}
+
+		return $damage;
 	}
 
 }
