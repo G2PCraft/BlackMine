@@ -148,7 +148,7 @@ use pocketmine\network\mcpe\protocol\MobEquipmentPacket;
 use pocketmine\network\mcpe\protocol\MoveEntityPacket;
 use pocketmine\network\mcpe\protocol\MovePlayerPacket;
 use pocketmine\network\mcpe\protocol\PlayerActionPacket;
-use pocketmine\network\mcpe\protocol\PlayerFallPacket;
+use pocketmine\network\mcpe\protocol\EntityFallPacket;
 use pocketmine\network\mcpe\protocol\PlayerInputPacket;
 use pocketmine\network\mcpe\protocol\PlayerListPacket;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
@@ -211,12 +211,6 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 	const ADVENTURE = 2;
 	const SPECTATOR = 3;
 	const VIEW = Player::SPECTATOR;
-	
-	const CRAFTING_SMALL = 0;
-	const CRAFTING_BIG = 1;
-	const CRAFTING_ANVIL = 2;
-	const CRAFTING_ENCHANT = 3;
-
 
 	/**
 	 * Checks a supplied username and checks it is valid.
@@ -728,7 +722,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 			$this->server->updatePlayerListData($this->getUniqueId(), $this->getId(), $this->getDisplayName(), $skinId, $str);
 		}
 	}
-//getUpdater
+
 	/**
 	 * Gets the player IP address
 	 *
@@ -769,10 +763,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 			}
 
 			$this->usedChunks = [];
-			$pk = new SetTimePacket();
-			$pk->time = $this->level->getTime();
-			$pk->started = $this->level->stopTime == false;
-			$this->dataPacket($pk);
+			$this->level->sendTime($this);
 		}
 	}
 
@@ -890,11 +881,6 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		$this->inventory->sendArmorContents($this);
 		$this->inventory->sendHeldItem($this);
 
-		$pk = new SetTimePacket();
-		$pk->time = $this->level->getTime();
-		$pk->started = $this->level->stopTime == false;
-		$this->dataPacket($pk);
-
 		$pos = $this->level->getSafeSpawn($this);
 
 		$this->server->getPluginManager()->callEvent($ev = new PlayerRespawnEvent($this, $pos));
@@ -940,9 +926,9 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 
 		$this->spawnToAll();
 
-		//if($this->server->getUpdater()->hasUpdate() and $this->hasPermission(Server::BROADCAST_CHANNEL_ADMINISTRATIVE)){
-			//$this->server->getUpdater()->showPlayerUpdate($this);
-		//}
+		if($this->server->getUpdater()->hasUpdate() and $this->hasPermission(Server::BROADCAST_CHANNEL_ADMINISTRATIVE)){
+			$this->server->getUpdater()->showPlayerUpdate($this);
+		}
 
 		if($this->getHealth() <= 0){
 			$pk = new RespawnPacket();
@@ -1255,6 +1241,25 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 	}
 
 	/**
+	 * @internal
+	 *
+	 * Returns a client-friendly gamemode of the specified real gamemode
+	 * This function takes care of handling gamemodes known to MCPE (as of 1.1.0.3, that includes Survival, Creative and Adventure)
+	 *
+	 * TODO: remove this when Spectator Mode gets added properly to MCPE
+	 *
+	 * @param int $gamemode
+	 */
+	public static function getClientFriendlyGamemode(int $gamemode) : int{
+		$gamemode &= 0x03;
+		if($gamemode === Player::SPECTATOR){
+			return Player::CREATIVE;
+		}
+
+		return $gamemode;
+	}
+
+	/**
 	 * Sets the gamemode, and if needed, kicks the Player.
 	 *
 	 * @param int  $gm
@@ -1267,13 +1272,10 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 			return false;
 		}
 
-		$this->server->getPluginManager()->callEvent($ev = new PlayerGameModeChangeEvent($this, (int) $gm));
+		$this->server->getPluginManager()->callEvent($ev = new PlayerGameModeChangeEvent($this, $gm));
 		if($ev->isCancelled()){
 			if($client){ //gamemode change by client in the GUI
-				$pk = new SetPlayerGameTypePacket();
-				$pk->gamemode = $this->gamemode & 0x01;
-				$this->dataPacket($pk);
-				$this->sendSettings();
+				$this->sendGamemode();
 			}
 			return false;
 		}
@@ -1300,9 +1302,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 
 		$this->namedtag->playerGameType = new IntTag("playerGameType", $this->gamemode);
 		if(!$client){ //Gamemode changed by server, do not send for client changes
-			$pk = new SetPlayerGameTypePacket();
-			$pk->gamemode = $this->gamemode & 0x01;
-			$this->dataPacket($pk);
+			$this->sendGamemode();
 		}else{
 			Command::broadcastCommandMessage($this, new TranslationContainer("commands.gamemode.success.self", [Server::getGamemodeString($gm)]));
 		}
@@ -1317,6 +1317,16 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		}
 
 		return true;
+	}
+
+	/**
+	 * @internal
+	 * Sends the player's gamemode to the client.
+	 */
+	public function sendGamemode(){
+		$pk = new SetPlayerGameTypePacket();
+		$pk->gamemode = Player::getClientFriendlyGamemode($this->gamemode);
+		$this->dataPacket($pk);
 	}
 
 	/**
@@ -1853,12 +1863,13 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		$pk = new StartGamePacket();
 		$pk->entityUniqueId = $this->id;
 		$pk->entityRuntimeId = $this->id;
+		$pk->playerGamemode = Player::getClientFriendlyGamemode($this->gamemode);
 		$pk->x = $this->x;
 		$pk->y = $this->y;
 		$pk->z = $this->z;
 		$pk->seed = -1;
 		$pk->dimension = 0; //TODO: implement this properly
-		$pk->gamemode = $this->gamemode & 0x01;
+		$pk->worldGamemode = Player::getClientFriendlyGamemode($this->server->getGamemode());
 		$pk->difficulty = $this->server->getDifficulty();
 		$pk->spawnX = $spawnPosition->getFloorX();
 		$pk->spawnY = $spawnPosition->getFloorY();
@@ -1873,14 +1884,12 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		$pk->worldName = $this->server->getMotd();
 		$this->dataPacket($pk);
 
-		$pk = new SetTimePacket();
-		$pk->time = $this->level->getTime();
-		$pk->started = $this->level->stopTime == false;
-		$this->dataPacket($pk);
+		$this->level->sendTime($this);
 
 		$this->sendAttributes(true);
 		$this->setNameTagVisible(true);
 		$this->setNameTagAlwaysVisible(true);
+		$this->setCanClimb(true);
 
 		$this->server->getLogger()->info($this->getServer()->getLanguage()->translateString("pocketmine.player.logIn", [
 			TextFormat::AQUA . $this->username . TextFormat::WHITE,
@@ -2268,7 +2277,13 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		if($packet->inventorySlot === 255){
 			$packet->inventorySlot = -1; //Cleared slot
 		}else{
+			if($packet->inventorySlot < 9){
+				$this->server->getLogger()->debug("Tried to equip a slot that does not exist (index " . $packet->inventorySlot . ")");
+				$this->inventory->sendContents($this);
+				return false;
+			}
 			$packet->inventorySlot -= 9; //Get real inventory slot
+
 			$item = $this->inventory->getItem($packet->inventorySlot);
 
 			if(!$item->equals($packet->item)){
@@ -2605,8 +2620,9 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 								new DoubleTag("", cos($this->yaw / 180 * M_PI) * cos($this->pitch / 180 * M_PI))
 							]),
 							"Rotation" => new ListTag("Rotation", [
-								new FloatTag("", $this->yaw),
-								new FloatTag("", $this->pitch)
+								//yaw/pitch for arrows taken crosswise, not along the arrow shaft.
+								new FloatTag("", ($this->yaw > 180 ? 360 : 0) - $this->yaw), //arrow yaw must range from -180 to +180
+								new FloatTag("", -$this->pitch)
 							]),
 							"Fire" => new ShortTag("Fire", $this->isOnFire() ? 45 * 60 : 0)
 						]);
@@ -2770,7 +2786,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		return true;
 	}
 
-	public function handlePlayerFall(PlayerFallPacket $packet) : bool{
+	public function handleEntityFall(EntityFallPacket $packet) : bool{
 		return false;
 	}
 
@@ -3204,11 +3220,9 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 	}
 
 	public function handleSetPlayerGameType(SetPlayerGameTypePacket $packet) : bool{
-		if($packet->gamemode !== ($this->gamemode & 0x01)){
-			//GUI gamemode change, set it back to original for now (only possible through client bug or hack with current allowed client permissions)
-			$pk = new SetPlayerGameTypePacket();
-			$pk->gamemode = $this->gamemode & 0x01;
-			$this->dataPacket($pk);
+		if($packet->gamemode !== $this->gamemode){
+			//Set this back to default. TODO: handle this properly
+			$this->sendGamemode();
 			$this->sendSettings();
 		}
 		return true;
@@ -3284,8 +3298,8 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		}
 		$this->craftingType = 0;
 		$commandText = $packet->command;
-		if($packet->args !== null){
-			foreach($packet->args as $arg){ //command ordering will be an issue
+		if($packet->inputJson !== null){
+			foreach($packet->inputJson as $arg){ //command ordering will be an issue
 				$commandText .= " " . $arg;
 			}
 		}
@@ -3366,8 +3380,9 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		$timings->startTiming();
 
 		$packet->decode();
-		assert($packet->feof(), "Still " . strlen(substr($packet->buffer, $packet->offset)) . " bytes unread in " . get_class($packet));
-
+		if(!$packet->feof()){
+			$this->server->getLogger()->debug("Still " . strlen(substr($packet->buffer, $packet->offset)) . " bytes unread in " . get_class($packet) . " from " . $this->getName() . ": " . bin2hex($packet->get(true)));
+		}
 		$this->server->getPluginManager()->callEvent($ev = new DataPacketReceiveEvent($this, $packet));
 		if(!$ev->isCancelled() and !$packet->handle($this)){
 			$this->server->getLogger()->debug("Unhandled " . $packet->getName() . " received from " . $this->getName() . ": 0x" . bin2hex($packet->buffer));
@@ -3445,18 +3460,9 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 	public function addTitle(string $title, string $subtitle = "", int $fadeIn = -1, int $stay = -1, int $fadeOut = -1){
 		$this->setTitleDuration($fadeIn, $stay, $fadeOut);
 		if($subtitle !== ""){
-			$this->addSubTitle($subtitle);
+			$this->sendTitleText($subtitle, SetTitlePacket::TYPE_SET_SUBTITLE);
 		}
 		$this->sendTitleText($title, SetTitlePacket::TYPE_SET_TITLE);
-	}
-
-	/**
-	 * Sets the subtitle message, without sending a title.
-	 *
-	 * @param string $subtitle
-	 */
-	public function addSubTitle(string $subtitle){
-	    $this->sendTitleText($subtitle, SetTitlePacket::TYPE_SET_SUBTITLE);
 	}
 
 	/**
@@ -3475,15 +3481,6 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		$pk = new SetTitlePacket();
 		$pk->type = SetTitlePacket::TYPE_CLEAR_TITLE;
 		$this->dataPacket($pk);
-	}
-
-	/**
-	 * Resets the title duration settings.
-	 */
-	public function resetTitles(){
-	    $pk = new SetTitlePacket();
-	    $pk->type = SetTitlePacket::TYPE_RESET_TITLE;
-	    $this->dataPacket($pk);
 	}
 
 	/**
