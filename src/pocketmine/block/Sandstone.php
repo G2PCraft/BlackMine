@@ -22,7 +22,6 @@
 namespace pocketmine\block;
 
 use pocketmine\item\Item;
-use pocketmine\item\TieredTool;
 use pocketmine\item\Tool;
 
 class Sandstone extends Solid{
@@ -56,7 +55,7 @@ class Sandstone extends Solid{
 	}
 
 	public function getDrops(Item $item){
-		if($item->isPickaxe() >= TieredTool::TIER_WOODEN){
+		if($item->isPickaxe() >= Tool::TIER_WOODEN){
 			return [
 				[Item::SANDSTONE, $this->meta & 0x03, 1],
 			];

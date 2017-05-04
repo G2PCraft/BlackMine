@@ -41,6 +41,10 @@ class Sapling extends Flowable{
 		$this->meta = $meta;
 	}
 
+	public function canBeActivated(){
+		return true;
+	}
+
 	public function getName(){
 		static $names = [
 			0 => "Oak Sapling",
