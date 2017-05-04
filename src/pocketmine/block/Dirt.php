@@ -33,6 +33,10 @@ class Dirt extends Solid{
 
 	}
 
+	public function canBeActivated(){
+		return true;
+	}
+
 	public function getHardness(){
 		return 0.5;
 	}
