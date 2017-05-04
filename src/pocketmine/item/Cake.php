@@ -21,13 +21,15 @@
 
 namespace pocketmine\item;
 
+use pocketmine\block\Block;
 
-class GoldPickaxe extends Tool{
+class Cake extends Item{
 	public function __construct($meta = 0, $count = 1){
-		parent::__construct(self::GOLD_PICKAXE, $meta, $count, "Gold Pickaxe");
+		$this->block = Block::get(Item::CAKE_BLOCK);
+		parent::__construct(self::CAKE, 0, $count, "Cake");
 	}
 
-	public function isPickaxe(){
-		return Tool::TIER_GOLD;
+	public function getMaxStackSize(){
+		return 1;
 	}
 }

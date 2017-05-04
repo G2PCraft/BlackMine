@@ -24,33 +24,33 @@ namespace pocketmine\item\enchantment;
 
 class Enchantment{
 
-	const PROTECTION = 0;
-	const FIRE_PROTECTION = 1;
-	const FEATHER_FALLING = 2;
-	const BLAST_PROTECTION = 3;
-	const PROJECTILE_PROTECTION = 4;
-	const THORNS = 5;
-	const RESPIRATION = 6;
-	const DEPTH_STRIDER = 7;
-	const AQUA_AFFINITY = 8;
-	const SHARPNESS = 9;
-	const SMITE = 10;
-	const BANE_OF_ARTHROPODS = 11;
-	const KNOCKBACK = 12;
-	const FIRE_ASPECT = 13;
-	const LOOTING = 14;
-	const EFFICIENCY = 15;
-	const SILK_TOUCH = 16;
-	const UNBREAKING = 17;
-	const FORTUNE = 18;
-	const POWER = 19;
-	const PUNCH = 20;
-	const FLAME = 21;
-	const INFINITY = 22;
-	const LUCK_OF_THE_SEA = 23;
-	const LURE = 24;
-	const FROST_WALKER = 25;
-	const MENDING = 26;
+	const TYPE_INVALID = -1;
+
+	const TYPE_ARMOR_PROTECTION = 0;
+	const TYPE_ARMOR_FIRE_PROTECTION = 1;
+	const TYPE_ARMOR_FALL_PROTECTION = 2;
+	const TYPE_ARMOR_EXPLOSION_PROTECTION = 3;
+	const TYPE_ARMOR_PROJECTILE_PROTECTION = 4;
+	const TYPE_ARMOR_THORNS = 5;
+	const TYPE_WATER_BREATHING = 6;
+	const TYPE_WATER_SPEED = 7;
+	const TYPE_WATER_AFFINITY = 8;
+	const TYPE_WEAPON_SHARPNESS = 9;
+	const TYPE_WEAPON_SMITE = 10;
+	const TYPE_WEAPON_ARTHROPODS = 11;
+	const TYPE_WEAPON_KNOCKBACK = 12;
+	const TYPE_WEAPON_FIRE_ASPECT = 13;
+	const TYPE_WEAPON_LOOTING = 14;
+	const TYPE_MINING_EFFICIENCY = 15;
+	const TYPE_MINING_SILK_TOUCH = 16;
+	const TYPE_MINING_DURABILITY = 17;
+	const TYPE_MINING_FORTUNE = 18;
+	const TYPE_BOW_POWER = 19;
+	const TYPE_BOW_KNOCKBACK = 20;
+	const TYPE_BOW_FLAME = 21;
+	const TYPE_BOW_INFINITY = 22;
+	const TYPE_FISHING_FORTUNE = 23;
+	const TYPE_FISHING_LURE = 24;
 
 	const RARITY_COMMON = 0;
 	const RARITY_UNCOMMON = 1;
@@ -87,29 +87,23 @@ class Enchantment{
 	public static function init(){
 		self::$enchantments = new \SplFixedArray(256);
 
-		self::$enchantments[self::PROTECTION] = new Enchantment(self::PROTECTION, "%enchantment.protect.all", self::RARITY_COMMON, self::ACTIVATION_EQUIP, self::SLOT_ARMOR);
-		self::$enchantments[self::FIRE_PROTECTION] = new Enchantment(self::FIRE_PROTECTION, "%enchantment.protect.fire", self::RARITY_UNCOMMON, self::ACTIVATION_EQUIP, self::SLOT_ARMOR);
-		self::$enchantments[self::FEATHER_FALLING] = new Enchantment(self::FEATHER_FALLING, "%enchantment.protect.fall", self::RARITY_UNCOMMON, self::ACTIVATION_EQUIP, self::SLOT_FEET);
+		self::$enchantments[self::TYPE_ARMOR_PROTECTION] = new Enchantment(self::TYPE_ARMOR_PROTECTION, "%enchantment.protect.all", self::RARITY_COMMON, self::ACTIVATION_EQUIP, self::SLOT_ARMOR);
+		self::$enchantments[self::TYPE_ARMOR_FIRE_PROTECTION] = new Enchantment(self::TYPE_ARMOR_FIRE_PROTECTION, "%enchantment.protect.fire", self::RARITY_UNCOMMON, self::ACTIVATION_EQUIP, self::SLOT_ARMOR);
+		self::$enchantments[self::TYPE_ARMOR_FALL_PROTECTION] = new Enchantment(self::TYPE_ARMOR_FALL_PROTECTION, "%enchantment.protect.fall", self::RARITY_UNCOMMON, self::ACTIVATION_EQUIP, self::SLOT_FEET);
 	}
 
 	/**
 	 * @param int $id
-	 *
-	 * @return Enchantment|null
+	 * @return $this
 	 */
-	public static function getEnchantment(int $id){
+	public static function getEnchantment($id){
 		if(isset(self::$enchantments[$id])){
-			return clone self::$enchantments[$id];
+			return clone self::$enchantments[(int) $id];
 		}
-		return null;
+		return new Enchantment(self::TYPE_INVALID, "unknown", 0, 0, 0);
 	}
 
-	/**
-	 * @param string $name
-	 *
-	 * @return Enchantment|null
-	 */
-	public static function getEnchantmentByName(string $name){
+	public static function getEffectByName($name){
 		if(defined(Enchantment::class . "::TYPE_" . strtoupper($name))){
 			return self::getEnchantment(constant(Enchantment::class . "::TYPE_" . strtoupper($name)));
 		}
@@ -123,87 +117,44 @@ class Enchantment{
 	private $activationType;
 	private $slot;
 
-	/**
-	 * @param int $id
-	 * @param string $name
-	 * @param int $rarity
-	 * @param int $activationType
-	 * @param int $slot
-	 */
-	private function __construct(int $id, string $name, int $rarity, int $activationType, int $slot){
-		$this->id = $id;
-		$this->name = $name;
-		$this->rarity = $rarity;
-		$this->activationType = $activationType;
-		$this->slot = $slot;
+	private function __construct($id, $name, $rarity, $activationType, $slot){
+		$this->id = (int) $id;
+		$this->name = (string) $name;
+		$this->rarity = (int) $rarity;
+		$this->activationType = (int) $activationType;
+		$this->slot = (int) $slot;
 	}
 
-	/**
-	 * Returns the ID of this enchantment as per Minecraft PE
-	 * @return int
-	 */
-	public function getId() : int{
+	public function getId(){
 		return $this->id;
 	}
 
-	/**
-	 * Returns a translation key for this enchantment's name.
-	 * @return string
-	 */
-	public function getName() : string{
+	public function getName(){
 		return $this->name;
 	}
 
-	/**
-	 * Returns an int constant indicating how rare this enchantment type is.
-	 * @return int
-	 */
-	public function getRarity() : int{
+	public function getRarity(){
 		return $this->rarity;
 	}
 
-	/**
-	 * Returns an int constant describing what type of activation this enchantment requires. For example armor enchantments only apply when worn.
-	 * @return int
-	 */
-	public function getActivationType() : int{
+	public function getActivationType(){
 		return $this->activationType;
 	}
 
-	/**
-	 * Returns an int with bitflags set to indicate what item types this enchantment can apply to.
-	 * @return int
-	 */
-	public function getSlot() : int{
+	public function getSlot(){
 		return $this->slot;
 	}
 
-	/**
-	 * Returns whether this enchantment can apply to the specified item type.
-	 * @param int $slot
-	 *
-	 * @return bool
-	 */
-	public function hasSlot(int $slot) : bool{
+	public function hasSlot($slot){
 		return ($this->slot & $slot) > 0;
 	}
 
-	/**
-	 * Returns the level of the enchantment.
-	 * @return int
-	 */
-	public function getLevel(): int{
+	public function getLevel(){
 		return $this->level;
 	}
 
-	/**
-	 * Sets the level of the enchantment.
-	 * @param int $level
-	 *
-	 * @return $this
-	 */
-	public function setLevel(int $level){
-		$this->level = $level;
+	public function setLevel($level){
+		$this->level = (int) $level;
 
 		return $this;
 	}

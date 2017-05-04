@@ -24,14 +24,22 @@ namespace pocketmine\item;
 use pocketmine\block\Air;
 use pocketmine\block\Block;
 use pocketmine\block\Liquid;
-use pocketmine\entity\Entity;
-use pocketmine\entity\Human;
-use pocketmine\event\player\PlayerBucketEmptyEvent;
 use pocketmine\event\player\PlayerBucketFillEvent;
 use pocketmine\level\Level;
 use pocketmine\Player;
 
-class Bucket extends Item implements Consumable{
+class Bucket extends Item{
+	public function __construct($meta = 0, $count = 1){
+		parent::__construct(self::BUCKET, $meta, $count, "Bucket");
+	}
+
+	public function getMaxStackSize(){
+		return 1;
+	}
+
+	public function canBeActivated(){
+		return true;
+	}
 
 	public function onActivate(Level $level, Player $player, Block $block, Block $target, $face, $fx, $fy, $fz){
 		$targetBlock = Block::get($this->meta);
@@ -54,7 +62,7 @@ class Bucket extends Item implements Consumable{
 		}elseif($targetBlock instanceof Liquid){
 			$result = clone $this;
 			$result->setDamage(0);
-			$player->getServer()->getPluginManager()->callEvent($ev = new PlayerBucketEmptyEvent($player, $block, $face, $this, $result));
+			$player->getServer()->getPluginManager()->callEvent($ev = new PlayerBucketFillEvent($player, $block, $face, $this, $result));
 			if(!$ev->isCancelled()){
 				$player->getLevel()->setBlock($block, $targetBlock, true, true);
 				if($player->isSurvival()){
@@ -67,26 +75,5 @@ class Bucket extends Item implements Consumable{
 		}
 
 		return false;
-	}
-
-	public function canBeConsumed() : bool{
-		return $this->meta === 1; //Milk
-	}
-
-	public function canBeConsumedBy(Entity $entity) : bool{
-		return $entity instanceof Human;
-	}
-
-	public function getAdditionalEffects() : array{
-		return [];
-	}
-
-	public function getResidue(){
-		return Item::get(Item::BUCKET, 0, 1);
-	}
-
-	public function onConsume(Entity $entity){
-		$entity->removeAllEffects();
-		//TODO: add boilerplate code for setting residue and calling events or improve eating implementation
 	}
 }
