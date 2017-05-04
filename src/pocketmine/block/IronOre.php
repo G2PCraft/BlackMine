@@ -22,7 +22,6 @@
 namespace pocketmine\block;
 
 use pocketmine\item\Item;
-use pocketmine\item\TieredTool;
 use pocketmine\item\Tool;
 
 class IronOre extends Solid{
@@ -46,7 +45,7 @@ class IronOre extends Solid{
 	}
 
 	public function getDrops(Item $item){
-		if($item->isPickaxe() >= TieredTool::TIER_STONE){
+		if($item->isPickaxe() >= Tool::TIER_STONE){
 			return [
 				[Item::IRON_ORE, 0, 1],
 			];
