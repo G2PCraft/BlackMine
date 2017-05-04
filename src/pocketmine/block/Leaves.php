@@ -25,8 +25,8 @@ use pocketmine\event\block\LeavesDecayEvent;
 use pocketmine\item\Item;
 use pocketmine\item\Tool;
 use pocketmine\level\Level;
-use pocketmine\math\Vector3;
 use pocketmine\Player;
+use pocketmine\Server;
 
 class Leaves extends Transparent{
 	const OAK = 0;
@@ -37,7 +37,6 @@ class Leaves extends Transparent{
 	const DARK_OAK = 1;
 
 	protected $id = self::LEAVES;
-	protected $woodType = self::LOG;
 
 	public function __construct($meta = 0){
 		$this->meta = $meta;
@@ -61,18 +60,22 @@ class Leaves extends Transparent{
 		return $names[$this->meta & 0x03];
 	}
 
-	protected function findLog(Block $pos, array $visited, $distance, &$check, $fromSide = null){
+	public function diffusesSkyLight() : bool{
+		return true;
+	}
+
+	private function findLog(Block $pos, array $visited, $distance, &$check, $fromSide = null){
 		++$check;
 		$index = $pos->x . "." . $pos->y . "." . $pos->z;
 		if(isset($visited[$index])){
 			return false;
 		}
-		if($pos->getId() === $this->woodType){
+		if($pos->getId() === self::WOOD){
 			return true;
-		}elseif($pos->getId() === $this->id and $distance < 3){
+		}elseif($pos->getId() === self::LEAVES and $distance < 3){
 			$visited[$index] = true;
-			$down = $pos->getSide(Vector3::SIDE_DOWN)->getId();
-			if($down === $this->woodType){
+			$down = $pos->getSide(0)->getId();
+			if($down === Item::WOOD){
 				return true;
 			}
 			if($fromSide === null){
@@ -138,7 +141,7 @@ class Leaves extends Transparent{
 				$visited = [];
 				$check = 0;
 
-				$this->getLevel()->getServer()->getPluginManager()->callEvent($ev = new LeavesDecayEvent($this));
+				Server::getInstance()->getPluginManager()->callEvent($ev = new LeavesDecayEvent($this));
 
 				if($ev->isCancelled() or $this->findLog($this, $visited, 0, $check) === true){
 					$this->getLevel()->setBlock($this, $this, false, false);
@@ -161,7 +164,7 @@ class Leaves extends Transparent{
 	public function getDrops(Item $item){
 		$drops = [];
 		if($item->isShears()){
-			$drops[] = [$this->id, $this->meta & 0x03, 1];
+			$drops[] = [Item::LEAVES, $this->meta & 0x03, 1];
 		}else{
 			if(mt_rand(1, 20) === 1){ //Saplings
 				$drops[] = [Item::SAPLING, $this->meta & 0x03, 1];

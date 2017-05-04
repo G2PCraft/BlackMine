@@ -31,7 +31,7 @@ use pocketmine\tile\ItemFrame as TileItemFrame;
 use pocketmine\tile\Tile;
 
 class ItemFrame extends Flowable{
-	protected $id = self::ITEM_FRAME_BLOCK;
+	protected $id = Block::ITEM_FRAME_BLOCK;
 
 	public function __construct($meta = 0){
 		$this->meta = $meta;
@@ -39,6 +39,10 @@ class ItemFrame extends Flowable{
 
 	public function getName(){
 		return "Item Frame";
+	}
+
+	public function canBeActivated(){
+		return true;
 	}
 
 	public function onActivate(Item $item, Player $player = null){
