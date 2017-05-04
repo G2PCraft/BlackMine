@@ -23,7 +23,7 @@ namespace pocketmine\block;
 
 use pocketmine\level\Level;
 
-class StillLava extends FlowingLava{
+class StillLava extends Lava{
 
 	protected $id = self::STILL_LAVA;
 
