@@ -292,4 +292,6 @@ interface NetworkSession{
 	public function handleStopSound(StopSoundPacket $packet) : bool;
 
 	public function handleSetTitle(SetTitlePacket $packet) : bool;
+
+	public function handleUnknown(UnknownPacket $packet) : bool;
 }
