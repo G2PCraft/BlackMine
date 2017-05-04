@@ -63,13 +63,13 @@ class Effect{
 		$config = new Config(\pocketmine\PATH . "src/pocketmine/resources/effects.json", Config::JSON, []);
 
 		foreach($config->getAll() as $name => $data){
-			$color = hexdec(substr($data["color"], 3));
+			$color = hexdec($data["color"]);
 			$r = ($color >> 16) & 0xff;
 			$g = ($color >> 8) & 0xff;
 			$b = $color & 0xff;
 			self::registerEffect($name, new Effect(
 				$data["id"],
-				$data["name"],
+				"%" . $data["name"],
 				$r,
 				$g,
 				$b,
@@ -155,14 +155,6 @@ class Effect{
 	 * @return string
 	 */
 	public function getName(){
-		return "%potion." . $this->getBaseLanguageName();
-	}
-
-	/**
-	 * Returns the base language key for this effect type. Used to translate names for potions and tipped arrows.
-	 * @return string
-	 */
-	public function getBaseLanguageName() : string{
 		return $this->name;
 	}
 
@@ -497,25 +489,5 @@ class Effect{
 				$entity->setAbsorption(0);
 				break;
 		}
-	}
-
-	/**
-	 * Deserializes JSON data into an effect.
-	 *
-	 * TODO: add a serialization method (need effect names)
-	 *
-	 * @param array $data
-	 *
-	 * @return Effect|null
-	 */
-	public static function fromJsonData(array $data){
-		$effect = Effect::getEffectByName($data["name"] ?? "");
-		if($effect instanceof Effect){
-			$effect->setDuration($data["duration"] * 20); //Stored in seconds, but the method takes ticks >_<
-			$effect->setAmplifier($data["amplifier"]);
-			return $effect;
-		}
-
-		return null;
 	}
 }

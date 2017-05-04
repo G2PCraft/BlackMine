@@ -21,14 +21,11 @@
 
 namespace pocketmine\entity;
 
-use pocketmine\block\Block;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\entity\EntityRegainHealthEvent;
 use pocketmine\event\player\PlayerExhaustEvent;
 use pocketmine\inventory\InventoryHolder;
 use pocketmine\inventory\PlayerInventory;
-use pocketmine\item\Consumable;
-use pocketmine\item\FoodSource;
 use pocketmine\item\Item as ItemItem;
 use pocketmine\level\Level;
 use pocketmine\nbt\NBT;
@@ -235,25 +232,6 @@ class Human extends Creature implements ProjectileSource, InventoryHolder{
 		return $ev->getAmount();
 	}
 
-	/**
-	 * @param Consumable $consumable
-	 *
-	 * @return mixed|Block|Consumable|ItemItem
-	 */
-	public function consume(Consumable $consumable){
-		if(($result = parent::consume($consumable)) !== $consumable){
-			if($consumable instanceof FoodSource){
-				if($consumable->requiresHunger() and !($this->getFood() < $this->getMaxFood())){
-					return $consumable;
-				}
-				$this->addFood($consumable->getFoodRestore());
-				$this->addSaturation($consumable->getSaturationRestore());
-			}
-		}
-
-		return $result;
-	}
-
 	public function getXpLevel() : int{
 		return (int) $this->attributeMap->getAttribute(Attribute::EXPERIENCE_LEVEL)->getValue();
 	}
@@ -294,22 +272,6 @@ class Human extends Creature implements ProjectileSource, InventoryHolder{
 
 	public function getInventory(){
 		return $this->inventory;
-	}
-
-	/**
-	 * Returns whether this entity is currently using its held item.
-	 * @return bool
-	 */
-	public function isUsingItem() : bool{
-		return $this->getDataFlag(self::DATA_FLAGS, self::DATA_FLAG_USINGITEM);
-	}
-
-	/**
-	 * Sets whether this entity is currently using its held item.
-	 * @param bool $value
-	 */
-	public function setUsingItem(bool $value = true){
-		$this->setDataFlag(self::DATA_FLAGS, self::DATA_FLAG_USINGITEM, $value);
 	}
 
 	protected function initEntity(){
