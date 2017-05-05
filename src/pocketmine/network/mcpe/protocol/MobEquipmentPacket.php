@@ -26,31 +26,34 @@ namespace pocketmine\network\mcpe\protocol;
 
 use pocketmine\network\mcpe\NetworkSession;
 
-class MobArmorEquipmentPacket extends DataPacket{
-	const NETWORK_ID = ProtocolInfo::MOB_ARMOR_EQUIPMENT_PACKET;
+class MobEquipmentPacket extends DataPacket{
+	const NETWORK_ID = ProtocolInfo::MOB_EQUIPMENT_PACKET;
 
 	public $eid;
-	public $slots = [];
+	public $item;
+	public $inventorySlot;
+	public $hotbarSlot;
+	public $unknownByte;
 
 	public function decode(){
 		$this->eid = $this->getEntityRuntimeId();
-		$this->slots[0] = $this->getSlot();
-		$this->slots[1] = $this->getSlot();
-		$this->slots[2] = $this->getSlot();
-		$this->slots[3] = $this->getSlot();
+		$this->item = $this->getSlot();
+		$this->inventorySlot = $this->getByte();
+		$this->hotbarSlot = $this->getByte();
+		$this->unknownByte = $this->getByte();
 	}
 
 	public function encode(){
 		$this->reset();
 		$this->putEntityRuntimeId($this->eid);
-		$this->putSlot($this->slots[0]);
-		$this->putSlot($this->slots[1]);
-		$this->putSlot($this->slots[2]);
-		$this->putSlot($this->slots[3]);
+		$this->putSlot($this->item);
+		$this->putByte($this->inventorySlot);
+		$this->putByte($this->hotbarSlot);
+		$this->putByte($this->unknownByte);
 	}
 
 	public function handle(NetworkSession $session) : bool{
-		return $session->handleMobArmorEquipment($this);
+		return $session->handleMobEquipment($this);
 	}
 
 }
