@@ -84,7 +84,7 @@ class MainLogger extends \AttachableThreadedLogger{
 	}
 
 	public function info($message){
-		$this->send($message, \LogLevel::INFO, "INFO", TextFormat::AQUA);
+		$this->send($message, \LogLevel::INFO, "INFO", TextFormat::WHITE);
 	}
 
 	public function debug($message){
