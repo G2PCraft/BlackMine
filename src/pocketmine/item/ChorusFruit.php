@@ -21,42 +21,18 @@
 
 namespace pocketmine\item;
 
-
-use pocketmine\block\Block;
-use pocketmine\block\Liquid;
-use pocketmine\entity\Entity;
-use pocketmine\math\Vector3;
-
 class ChorusFruit extends Food{
 
-	public function onConsume(Entity $human){
-		$minX = ((int) $human->x) - 8;
-		$minY = ((int) $human->y) - 8;
-		$minZ = ((int) $human->z) - 8;
-		$maxX = $minX + 16;
-		$maxY = $minY + 16;
-		$maxZ = $minZ + 16;
-
-		$level = $human->getLevel();
-
-		for($attempts = 0; $attempts < 16; ++$attempts){
-			$x = mt_rand($minX, $maxX);
-			$y = mt_rand($minY, $maxY);
-			$z = mt_rand($minZ, $maxZ);
-
-			$space = 0;
-
-			while($y > 0 and !Block::$solid[$level->getBlockIdAt($x, $y, $z)]){
-				$y--;
-				$space++;
-			}
-
-			if($space < 2 or $level->getBlock(new Vector3($x, $y + 1, $z)) instanceof Liquid or $level->getBlock(new Vector3($x, $y + 2, $z)) instanceof Liquid){
-				continue;
-			}
-
-			$human->teleport(new Vector3($x + 0.5, $y + 1, $z + 0.5));
-			break;
-		}
+	public function __construct($meta = 0, $count = 1){
+		parent::__construct(self::CHORUS_FRUIT, 0, $count, "Chorus Fruit");
 	}
+  
+	public function getFoodRestore() : int{
+		return 4;
+	}
+  
+	public function getSaturationRestore() : float{
+		return 2.4;
+	}
+  
 }
