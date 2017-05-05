@@ -434,7 +434,29 @@ class Block extends Position implements BlockIds, Metadatable{
 	public function getLightLevel(){
 		return 0;
 	}
-
+        /**
+ 	 * Returns the amount of light this block will filter out when light passes through this block.
+ 	 * This value is used in light spread calculation.
+ 	 *
+ 	 * @return int 0-15
+ 	 */
+ 	public function getLightFilter() : int{
+ 		return 15;
+ 	}
+ 
+ 	/**
+ 	 * Returns whether this block will diffuse sky light passing through it vertically.
+ 	 * Diffusion means that full-strength sky light passing through this block will not be reduced, but will start being filtered below the block.
+ 	 * Examples of this behaviour include leaves and cobwebs.
+ 	 *
+ 	 * Light-diffusing blocks are included by the heightmap.
+ 	 *
+ 	 * @return bool
+ 	 */
+ 	public function diffusesSkyLight() : bool{
+ 		return false;
+ 	}
+ 
 	/**
 	 * AKA: Block->isPlaceable
 	 *
