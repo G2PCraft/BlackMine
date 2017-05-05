@@ -80,11 +80,8 @@ class ContainerSetContentPacket extends DataPacket{
 		}
 	}
 
-	/**
-	 * @return PacketName|string
-     */
-	public function getName(){
-		return "ContainerSetContentPacket";
+	public function handle(NetworkSession $session) : bool{
+		return $session->handleContainerSetContent($this);
 	}
 
 }
