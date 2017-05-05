@@ -26,34 +26,42 @@ namespace pocketmine\network\mcpe\protocol;
 
 use pocketmine\network\mcpe\NetworkSession;
 
-class MobEquipmentPacket extends DataPacket{
-	const NETWORK_ID = ProtocolInfo::MOB_EQUIPMENT_PACKET;
+class MoveEntityPacket extends DataPacket{
+	const NETWORK_ID = ProtocolInfo::MOVE_ENTITY_PACKET;
 
 	public $eid;
-	public $item;
-	public $inventorySlot;
-	public $hotbarSlot;
-	public $unknownByte;
+	public $x;
+	public $y;
+	public $z;
+	public $yaw;
+	public $headYaw;
+	public $pitch;
+	public $onGround;
+	public $teleported;
 
 	public function decode(){
 		$this->eid = $this->getEntityRuntimeId();
-		$this->item = $this->getSlot();
-		$this->inventorySlot = $this->getByte();
-		$this->hotbarSlot = $this->getByte();
-		$this->unknownByte = $this->getByte();
+		$this->getVector3f($this->x, $this->y, $this->z);
+		$this->pitch = $this->getByte() * (360.0 / 256);
+		$this->headYaw = $this->getByte() * (360.0 / 256);
+		$this->yaw = $this->getByte() * (360.0 / 256);
+		$this->onGround = $this->getByte();
+		$this->teleported = $this->getByte();
 	}
 
 	public function encode(){
 		$this->reset();
 		$this->putEntityRuntimeId($this->eid);
-		$this->putSlot($this->item);
-		$this->putByte($this->inventorySlot);
-		$this->putByte($this->hotbarSlot);
-		$this->putByte($this->unknownByte);
+		$this->putVector3f($this->x, $this->y, $this->z);
+		$this->putByte($this->pitch / (360.0 / 256));
+		$this->putByte($this->headYaw / (360.0 / 256));
+		$this->putByte($this->yaw / (360.0 / 256));
+		$this->putByte($this->onGround);
+		$this->putByte($this->teleported);
 	}
 
 	public function handle(NetworkSession $session) : bool{
-		return $session->handleMobEquipment($this);
+		return $session->handleMoveEntity($this);
 	}
 
 }
