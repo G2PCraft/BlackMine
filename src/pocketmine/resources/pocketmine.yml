@@ -23,6 +23,20 @@ settings:
  #Set this approximately to your number of cores.
  #If set to auto, it'll try to detect the number of cores (or use 2)
  async-workers: auto
+ #Whether the server should "try" to add new configs automatically here
+ #DISCLAIMER: WE DO NOT SUPPORT ALL OPTIONS UNDER 'incompatible-plugins'.
+ #DO NOT REPORT ANY BUGS BEFORE MAKING SURE IT DOESN'T RESULT OUT OF THIS OPTION!
+ #Most old plugins crash the server (maybe even segfaults), and can corrupt your savefiles.
+ incompatible-plugins:
+ #Load plugins with incompatible API versions
+  plugin-too-new:
+   major: false
+   #Load plugins whose major API version is too new
+   minor: false
+   #Load plugins whose minor API version is too new
+  plugin-too-old: true
+  #Load plugins whose major API version is too old
+
 
 memory:
  #Global soft memory limit in megabytes. Set to 0 to disable
@@ -159,7 +173,7 @@ spawn-limits:
 
 auto-report:
  #Send crash reports for processing
- enabled: true
+ enabled: false
  send-code: true
  send-settings: true
  send-phpinfo: false
@@ -171,7 +185,7 @@ anonymous-statistics:
  host: stats.pocketmine.net
 
 auto-updater:
- enabled: true
+ enabled: false
  on-update:
   warn-console: true
   warn-ops: true
