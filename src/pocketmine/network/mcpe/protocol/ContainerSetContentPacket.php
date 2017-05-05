@@ -65,7 +65,7 @@ class ContainerSetContentPacket extends DataPacket{
 	public function encode(){
 		$this->reset();
 		$this->putUnsignedVarInt($this->windowid);
-		$this->putEntityId($this->targetEid);
+		$this->putEntityUniqueId($this->targetEid);
 		$this->putUnsignedVarInt(count($this->slots));
 		foreach($this->slots as $slot){
 			$this->putSlot($slot);
