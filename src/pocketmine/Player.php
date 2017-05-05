@@ -184,7 +184,6 @@ use pocketmine\network\mcpe\protocol\StopSoundPacket;
 use pocketmine\network\mcpe\protocol\TakeItemEntityPacket;
 use pocketmine\network\mcpe\protocol\TextPacket;
 use pocketmine\network\mcpe\protocol\TransferPacket;
-use pocketmine\network\mcpe\protocol\UnknownPacket;
 use pocketmine\network\mcpe\protocol\UpdateAttributesPacket;
 use pocketmine\network\mcpe\protocol\UpdateBlockPacket;
 use pocketmine\network\mcpe\protocol\UpdateTradePacket;
@@ -926,9 +925,9 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 
 		$this->spawnToAll();
 
-		//if($this->server->getUpdater()->hasUpdate() and $this->hasPermission(Server::BROADCAST_CHANNEL_ADMINISTRATIVE)){
-		//	$this->server->getUpdater()->showPlayerUpdate($this);
-		//}
+		if($this->server->getUpdater()->hasUpdate() and $this->hasPermission(Server::BROADCAST_CHANNEL_ADMINISTRATIVE)){
+			$this->server->getUpdater()->showPlayerUpdate($this);
+		}
 
 		if($this->getHealth() <= 0){
 			$pk = new RespawnPacket();
@@ -2469,7 +2468,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 			if(!$this->canInteract($blockVector->add(0.5, 0.5, 0.5), 13) or $this->isSpectator()){
 			}elseif($this->isCreative()){
 				$item = $this->inventory->getItemInHand();
-				if($this->level->useItemOn($blockVector, $item, $packet->face, $packet->fx, $packet->fy, $packet->fz, $this) === true){
+				if($this->level->useItemOn($blockVector, $item, $packet->face, $packet->fx, $packet->fy, $packet->fz, $this, true) === true){
 					return true;
 				}
 			}elseif(!$this->inventory->getItemInHand()->equals($packet->item)){
@@ -2478,7 +2477,7 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 				$item = $this->inventory->getItemInHand();
 				$oldItem = clone $item;
 				//TODO: Implement adventure mode checks
-				if($this->level->useItemOn($blockVector, $item, $packet->face, $packet->fx, $packet->fy, $packet->fz, $this)){
+				if($this->level->useItemOn($blockVector, $item, $packet->face, $packet->fx, $packet->fy, $packet->fz, $this, true)){
 					if(!$item->equals($oldItem) or $item->getCount() !== $oldItem->getCount()){
 						$this->inventory->setItemInHand($item);
 						$this->inventory->sendHeldItem($this->hasSpawned);
@@ -2775,6 +2774,10 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 			case PlayerActionPacket::ACTION_START_GLIDE:
 			case PlayerActionPacket::ACTION_STOP_GLIDE:
 				break; //TODO
+			case PlayerActionPacket::ACTION_CONTINUE_BREAK:
+				$block = $this->level->getBlock($pos);
+				$this->level->broadcastLevelEvent($pos, LevelEventPacket::EVENT_PARTICLE_PUNCH_BLOCK, $block->getId() | ($block->getDamage() << 8) | ($packet->face << 16));
+				break;
 			default:
 				$this->server->getLogger()->debug("Unhandled/unknown player action type " . $packet->action . " from " . $this->getName());
 				return false;
@@ -3460,9 +3463,18 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 	public function addTitle(string $title, string $subtitle = "", int $fadeIn = -1, int $stay = -1, int $fadeOut = -1){
 		$this->setTitleDuration($fadeIn, $stay, $fadeOut);
 		if($subtitle !== ""){
-			$this->sendTitleText($subtitle, SetTitlePacket::TYPE_SET_SUBTITLE);
+			$this->addSubTitle($subtitle);
 		}
 		$this->sendTitleText($title, SetTitlePacket::TYPE_SET_TITLE);
+	}
+
+	/**
+	 * Sets the subtitle message, without sending a title.
+	 *
+	 * @param string $subtitle
+	 */
+	public function addSubTitle(string $subtitle){
+	    $this->sendTitleText($subtitle, SetTitlePacket::TYPE_SET_SUBTITLE);
 	}
 
 	/**
@@ -3481,6 +3493,15 @@ class Player extends Human implements CommandSender, InventoryHolder, ChunkLoade
 		$pk = new SetTitlePacket();
 		$pk->type = SetTitlePacket::TYPE_CLEAR_TITLE;
 		$this->dataPacket($pk);
+	}
+
+	/**
+	 * Resets the title duration settings.
+	 */
+	public function resetTitles(){
+	    $pk = new SetTitlePacket();
+	    $pk->type = SetTitlePacket::TYPE_RESET_TITLE;
+	    $this->dataPacket($pk);
 	}
 
 	/**
