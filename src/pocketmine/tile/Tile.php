@@ -48,7 +48,7 @@ abstract class Tile extends Position{
 	const CAULDRON = "Cauldron";
 	const HOPPER = "Hopper";
 	const BEACON = "Beacon";
-	//const ENDER_CHEST = "EnderChest";
+	const ENDER_CHEST = "EnderChest";
 
 	public static $tileCount = 1;
 
@@ -81,7 +81,7 @@ abstract class Tile extends Position{
 		self::registerTile(Skull::class);
 		self::registerTile(Cauldron::class);
 		self::registerTile(Hopper::class);
-		//self::registerTile(EnderChest::class);
+		self::registerTile(EnderChest::class);
 
 	}
 
