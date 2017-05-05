@@ -261,41 +261,44 @@ class Block extends Position implements BlockIds, Metadatable{
 			self::$list[self::CHORUS_FLOWER] = ChorusFlower::class;
  			self::$list[self::CHORUS_PLANT] = ChorusPlant::class;
 			self::$list[self::INVISIBLE_BEDROCK] = InvisibleBedrock::class;
-			
-			foreach(self::$list as $id => $class){
-				if($class !== null){
-					/** @var Block $block */
-					$block = new $class();
-
-					for($data = 0; $data < 16; ++$data){
-						self::$fullList[($id << 4) | $data] = new $class($data);
-					}
-
-					self::$solid[$id] = $block->isSolid();
-					self::$transparent[$id] = $block->isTransparent();
-					self::$hardness[$id] = $block->getHardness();
-					self::$light[$id] = $block->getLightLevel();
-
-					if($block->isSolid()){
-						if($block->isTransparent()){
-							if($block instanceof Liquid or $block instanceof Ice){
-								self::$lightFilter[$id] = 2;
-							}else{
-								self::$lightFilter[$id] = 1;
-							}
-						}else{
-							self::$lightFilter[$id] = 15;
-						}
-					}else{
-						self::$lightFilter[$id] = 1;
-					}
-				}else{
-					self::$lightFilter[$id] = 1;
-					for($data = 0; $data < 16; ++$data){
-						self::$fullList[($id << 4) | $data] = new UnknownBlock($id, $data);
-					}
+				   self::registerBlock(new UnknownBlock($id));
 				}
 			}
+		}
+	}
+
+	/**
+	 * Adds a Block type to the index. Plugins may use this method to register new block types, or override existing ones.
+	 * @since API 3.0.0
+	 *
+	 * @param Block $block
+	 */
+	public static function registerBlock(Block $block){
+		self::$list[$block->id] = $block;
+		for($data = 0; $data < 16; ++$data){
+			$b = clone $block;
+			$b->meta = $data;
+			self::$fullList[($block->id << 4) | $data] = $b;
+		}
+
+		self::$solid[$block->id] = $block->isSolid();
+		self::$transparent[$block->id] = $block->isTransparent();
+		self::$hardness[$block->id] = $block->getHardness();
+		self::$light[$block->id] = $block->getLightLevel();
+
+		//TODO: remove this mess and add an OOP API for light-filtering
+		if($block->isSolid()){
+			if($block->isTransparent()){
+				if($block instanceof Liquid or $block instanceof Ice){
+					self::$lightFilter[$block->id] = 2;
+				}else{
+					self::$lightFilter[$block->id] = 1;
+				}
+			}else{
+				self::$lightFilter[$block->id] = 15;
+			}
+		}else{
+			self::$lightFilter[$block->id] = 1;
 		}
 	}
 
@@ -308,12 +311,7 @@ class Block extends Position implements BlockIds, Metadatable{
 	 */
 	public static function get($id, $meta = 0, Position $pos = null){
 		try{
-			$block = self::$list[$id];
-			if($block !== null){
-				$block = new $block($meta);
-			}else{
-				$block = new UnknownBlock($id, $meta);
-			}
+			$block = clone self::$fullList[($id << 4) | $meta];
 		}catch(\RuntimeException $e){
 			$block = new UnknownBlock($id, $meta);
 		}
@@ -327,6 +325,15 @@ class Block extends Position implements BlockIds, Metadatable{
 
 		return $block;
 	}
+
+	protected $fallbackName = "Unknown";
+
+	protected $id;
+	protected $meta = 0;
+
+	/** @var AxisAlignedBB */
+	public $boundingBox = null;
+
 
 	/**
 	 * @param int $id
@@ -401,14 +408,14 @@ class Block extends Position implements BlockIds, Metadatable{
 	}
 
 	/**
-	 * @return int
+	 * @return float
 	 */
 	public function getHardness(){
 		return 10;
 	}
 
 	/**
-	 * @return int
+	 * @return float
 	 */
 	public function getResistance(){
 		return $this->getHardness() * 5;
@@ -434,29 +441,7 @@ class Block extends Position implements BlockIds, Metadatable{
 	public function getLightLevel(){
 		return 0;
 	}
-        /**
- 	 * Returns the amount of light this block will filter out when light passes through this block.
- 	 * This value is used in light spread calculation.
- 	 *
- 	 * @return int 0-15
- 	 */
- 	public function getLightFilter() : int{
- 		return 15;
- 	}
- 
- 	/**
- 	 * Returns whether this block will diffuse sky light passing through it vertically.
- 	 * Diffusion means that full-strength sky light passing through this block will not be reduced, but will start being filtered below the block.
- 	 * Examples of this behaviour include leaves and cobwebs.
- 	 *
- 	 * Light-diffusing blocks are included by the heightmap.
- 	 *
- 	 * @return bool
- 	 */
- 	public function diffusesSkyLight() : bool{
- 		return false;
- 	}
- 
+
 	/**
 	 * AKA: Block->isPlaceable
 	 *
@@ -480,9 +465,6 @@ class Block extends Position implements BlockIds, Metadatable{
 		return false;
 	}
 
-	/**
-	 * @return bool
-	 */
 	public function isSolid(){
 		return true;
 	}
@@ -493,15 +475,6 @@ class Block extends Position implements BlockIds, Metadatable{
 	 * @return bool
 	 */
 	public function canBeFlowedInto(){
-		return false;
-	}
-
-	/**
-	 * AKA: Block->isActivable
-	 *
-	 * @return bool
-	 */
-	public function canBeActivated(){
 		return false;
 	}
 
@@ -517,7 +490,20 @@ class Block extends Position implements BlockIds, Metadatable{
 	 * @return string
 	 */
 	public function getName(){
-		return "Unknown";
+		return $this->fallbackName;
+	}
+
+	/**
+	 * Sets the fallback English name of the block.
+	 * @since API 3.0.0
+	 *
+	 * @param string $name
+	 * @return $this
+	 */
+	public function setName(string $name){
+		$this->fallbackName = $name;
+
+		return $this;
 	}
 
 	/**
@@ -525,6 +511,18 @@ class Block extends Position implements BlockIds, Metadatable{
 	 */
 	final public function getId(){
 		return $this->id;
+	}
+
+	/**
+	 * Sets the ID of the block type.
+	 * @internal
+	 *
+	 * @param int $id
+	 * @return $this
+	 */
+	final protected function setId(int $id){
+		$this->id = $id;
+		return $this;
 	}
 
 	public function addVelocityToEntity(Entity $entity, Vector3 $vector){
@@ -593,19 +591,19 @@ class Block extends Position implements BlockIds, Metadatable{
 				($this->getToolType() === Tool::TYPE_SHOVEL and ($tier = $item->isShovel()) !== false)
 			){
 				switch($tier){
-					case Tool::TIER_WOODEN:
+					case TieredTool::TIER_WOODEN:
 						$base /= 2;
 						break;
-					case Tool::TIER_STONE:
+					case TieredTool::TIER_STONE:
 						$base /= 4;
 						break;
-					case Tool::TIER_IRON:
+					case TieredTool::TIER_IRON:
 						$base /= 6;
 						break;
-					case Tool::TIER_DIAMOND:
+					case TieredTool::TIER_DIAMOND:
 						$base /= 8;
 						break;
-					case Tool::TIER_GOLD:
+					case TieredTool::TIER_GOLD:
 						$base /= 12;
 						break;
 				}
