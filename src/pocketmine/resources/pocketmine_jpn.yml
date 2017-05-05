@@ -23,6 +23,20 @@ settings:
 #あなたのコア数に合わせて設定します
 #autoに設定すると、コアの数を検出しようとします（または2を使用します）
  async-workers: auto
+ #Whether the server should "try" to add new configs automatically here
+ #DISCLAIMER: WE DO NOT SUPPORT ALL OPTIONS UNDER 'incompatible-plugins'.
+ #DO NOT REPORT ANY BUGS BEFORE MAKING SURE IT DOESN'T RESULT OUT OF THIS OPTION!
+ #Most old plugins crash the server (maybe even segfaults), and can corrupt your savefiles.
+ incompatible-plugins:
+ #Load plugins with incompatible API versions
+  plugin-too-new:
+   major: false
+   #Load plugins whose major API version is too new
+   minor: false
+   #Load plugins whose minor API version is too new
+  plugin-too-old: true
+  #Load plugins whose major API version is too old
+
 
 memory:
  #グローバルソフトメモリの上限（メガバイト）。 無効にするには0に設定します
