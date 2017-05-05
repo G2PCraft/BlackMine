@@ -1,6 +1,8 @@
 # BlackMine (PHP7)
 ### BlackMine is a Minecraft: PE Server Software with an improved Generator and a lot more features. 
 
+## warning now all plugins work on mcpe 1.1.0 update
+
 Note: 
 
 BlackMine is for all. Anyone can copy-paste are code and other features. 
