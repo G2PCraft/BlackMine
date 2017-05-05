@@ -262,6 +262,14 @@ class Block extends Position implements BlockIds, Metadatable{
  			self::$list[self::CHORUS_PLANT] = ChorusPlant::class;
 			self::$list[self::INVISIBLE_BEDROCK] = InvisibleBedrock::class;
 
+		foreach(self::$list as $id => $block){
+				if($block === null){
+					self::registerBlock(new UnknownBlock($id));
+				}
+			}
+		}
+	}
+
 	/**
 	 * Adds a Block type to the index. Plugins may use this method to register new block types, or override existing ones.
 	 * @since API 3.0.0
