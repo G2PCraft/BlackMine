@@ -1364,7 +1364,7 @@ class Server{
 			Server::$sleeper->wait($ms);
 		}, $microseconds);
 	}
-
+	
 	/**
 	 * @param \ClassLoader    $autoloader
 	 * @param \ThreadedLogger $logger
@@ -1436,7 +1436,43 @@ class Server{
 				"auto-save" => true,
 				"view-distance" => 8
 			]);
-
+			
+			$version = $this->getFormattedVersion();
+			$this->version = $version;
+			$code = $this->getCodename();
+			$mcpe = $this->getVersion();
+			$protocol = Info::CURRENT_PROTOCOL;
+			$api = $this->getApiVersion();
+			$ip = Utils::getIP();
+			$port = $this->getPort();
+			$query = $this->getIp();
+			$ssl = $this->isExtensionInstalled("OpenSSL");
+			$mode = $this->checkAuthentication();
+			$lang = $this->getProperty("settings.language", "eng");
+			$date = date("D, F d, Y, H:i T");
+			$package = $packages;
+	
+	$this->logger->info("
+		
+	§3blackmine§f is a custom version of §bpmmp§f, modified by §5BlackLight-NL§f
+	Version: §6' . $this->getPocketMineVersion() . '§f
+	Target client version: §b' . ProtocolInfo::MINECRAFT_VERSION . '§f
+	Source code: §dhttps://github.com/BlackLight-NL/BlackMine§f
+	
+        §6------------------info about software-------
+        §6-- Loaded: Properties and Configuration --
+        §cDate: §d$date
+        §cVersion: §d$version §cCodename: §d$code
+        §cMCPE: §d$mcpe §cProtocol: §d$protocol
+        §cIP: §d$ip §cPort: §d$port
+        §cQuery: §d$query
+        §cSSL Extension: §d$ssl
+        §cAuthentication: §d$mode
+        §6------------------------------------------
+        §cLanguage: §d$lang
+        §cPackage: §d$package§
+        §6------------------------------------------");
+	
 			$this->forceLanguage = $this->getProperty("settings.force-language", false);
 			$this->baseLang = new BaseLang($this->getProperty("settings.language", BaseLang::FALLBACK_LANGUAGE));
 			$this->logger->info($this->getLanguage()->translateString("language.selected", [$this->getLanguage()->getName(), $this->getLanguage()->getLang()]));
