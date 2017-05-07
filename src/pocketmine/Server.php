@@ -273,12 +273,16 @@ class Server{
 	public function isRunning(){
 		return $this->isRunning === true;
 	}
-
+	
 	/**
 	 * @return string
 	 */
 	public function getPocketMineVersion(){
 		return \pocketmine\VERSION;
+	}
+
+	public function getFormattedVersion($prefix = ""){
+		return (\pocketmine\VERSION !== ""? $prefix . \pocketmine\VERSION : "");
 	}
 
 	/**
