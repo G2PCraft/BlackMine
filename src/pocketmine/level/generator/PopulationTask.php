@@ -48,8 +48,14 @@ class PopulationTask extends AsyncTask{
 		$this->levelId = $level->getId();
 		$this->chunk = $chunk->fastSerialize();
 
-		foreach($level->getAdjacentChunks($chunk->getX(), $chunk->getZ()) as $i => $c){
-			$this->{"chunk$i"} = $c !== null ? $c->fastSerialize() : null;
+		for($i = 0; $i < 9; ++$i){
+			if($i === 4){
+				continue;
+			}
+			$xx = -1 + $i % 3;
+			$zz = -1 + (int) ($i / 3);
+			$ck = $level->getChunk($chunk->getX() + $xx, $chunk->getZ() + $zz, false);
+			$this->{"chunk$i"} = $ck !== null ? $ck->fastSerialize() : null;
 		}
 	}
 
