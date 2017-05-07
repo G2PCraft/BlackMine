@@ -1405,7 +1405,7 @@ class Server{
 
 			$version = new VersionString($this->getPocketMineVersion());
 
-			$this->logger->info("Loading pocketmine.yml...");
+			//$this->logger->info("Loading pocketmine.yml...");
 			if(!file_exists($this->dataPath . "pocketmine.yml")){
 				$content = file_get_contents($this->filePath . "src/pocketmine/resources/pocketmine.yml");
 				if($version->isDev()){
@@ -1415,7 +1415,7 @@ class Server{
 			}
 			$this->config = new Config($this->dataPath . "pocketmine.yml", Config::YAML, []);
 
-			$this->logger->info("Loading server properties...");
+		//	$this->logger->info("Loading server properties...");
 			$this->properties = new Config($this->dataPath . "server.properties", Config::PROPERTIES, [
 				"motd" => "Minecraft: PE Server",
 				"server-port" => 19132,
@@ -1453,28 +1453,22 @@ class Server{
 			$query = $this->getIp();
 			$lang = $this->getProperty("settings.language", "eng");
 			$date = date("D, F d, Y, H:i T");
-			$package = $packages;
 	
-	$this->logger->info("
-		
-	§3blackmine§f is a custom version of §bpmmp§f, modified by §5BlackLight-NL§f
-	Version: §6' . $this->getPocketMineVersion() . '§f
-	Target client version: §b' . ProtocolInfo::MINECRAFT_VERSION . '§f
-	Source code: §dhttps://github.com/BlackLight-NL/BlackMine§f
+ $this->logger->info("	 
+ §bblackmine§b is a custom version of §bpmmp§b, modified by §bBlackLight-NL§b
+ Version: §b §b$version §bCodename: §b$code
+ §bTarget client version: §b$mcpe §bProtocol: §b$protocol §b
+ §bSource code: §bhttps://github.com/BlackLight-NL/BlackMine§b
 	
-        §6------------------info about software-------
-        §6-- Loaded: Properties and Configuration --
-        §cDate: §d$date
-        §cVersion: §d$version §cCodename: §d$code
-        §cMCPE: §d$mcpe §cProtocol: §d$protocol
-        §cIP: §d$ip §cPort: §d$port
-        §cQuery: §d$query
-        §cSSL Extension: §d$ssl
-        §cAuthentication: §d$mode
-        §6------------------------------------------
-        §cLanguage: §d$lang
-        §cPackage: §d$package§
-        §6------------------------------------------");
+ §b-- Loaded: Properties and Configuration --
+ §bDate: $date
+ §bVersion: $version Codename: $code
+ §bMCPE: $mcpe Protocol: $protocol
+ §bIP: $ip Port: $port
+ §bQuery: $query
+ §b------------------------------------------
+ §bLanguage: $lang
+ §b------------------------------------------");
 	
 			$this->forceLanguage = $this->getProperty("settings.force-language", false);
 			$this->baseLang = new BaseLang($this->getProperty("settings.language", BaseLang::FALLBACK_LANGUAGE));
@@ -1565,13 +1559,6 @@ class Server{
 			$this->network = new Network($this);
 			$this->network->setName($this->getMotd());
 
-
-			$this->logger->info($this->getLanguage()->translateString("pocketmine.server.info", [
-				$this->getName(),
-				($version->isDev() ? TextFormat::YELLOW : "") . $version->get(true) . TextFormat::WHITE,
-				$this->getCodename(),
-				$this->getApiVersion()
-			]));
 			$this->logger->info($this->getLanguage()->translateString("pocketmine.server.license", [$this->getName()]));
 
 			Timings::init();
