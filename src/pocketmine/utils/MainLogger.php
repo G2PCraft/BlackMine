@@ -80,11 +80,11 @@ class MainLogger extends \AttachableThreadedLogger{
 	}
 
 	public function notice($message){
-		$this->send($message, \LogLevel::NOTICE, "NOTICE", TextFormat::AQUA);
+		$this->send($message, \LogLevel::NOTICE, "NOTICE", TextFormat::WHITE);
 	}
 
 	public function info($message){
-		$this->send($message, \LogLevel::INFO, "INFO", TextFormat::WHITE);
+		$this->send($message, \LogLevel::INFO, "INFO", TextFormat::AQUA);
 	}
 
 	public function debug($message){
