@@ -1451,8 +1451,6 @@ class Server{
 			$ip = Utils::getIP();
 			$port = $this->getPort();
 			$query = $this->getIp();
-			$ssl = $this->isExtensionInstalled("OpenSSL");
-			$mode = $this->checkAuthentication();
 			$lang = $this->getProperty("settings.language", "eng");
 			$date = date("D, F d, Y, H:i T");
 			$package = $packages;
